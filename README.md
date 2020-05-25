@@ -14,7 +14,7 @@ CamVid is a car camera live-stream Dataset for semantic segmentation from Cambri
 
 In the example ipy-notebook, however, the author used [a modified version](https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid) of the Dataset. In the modified version, class numbers are reduced to 12, and the data mask is no longer painted with color, but each pixel in the mask directly has the value of its class number from 0 to 11. Therefore the mask looks almost black, no longer human-readable but easy for program to extract masks in one-hot code form of a certain class.  
 
-![camvid](.\img\CamVid.png)
+<img src=".\img\CamVid.png" alt="camvid"  />
 
 Following is a fraction of the modified CamVid mask, by replacing class specified color with class number, the details becomes hard to see, but we can easily extract the pixel location of a desired class by:
 
@@ -87,7 +87,7 @@ Following is the hierarchy of VOC 07 Dataset:
 
 Since the mask is painted with color, we must first convert the color to its corresponding class number, like the above CamVid Dataset. 
 
-![VOC](.\img\VOC.png)
+<img src=".\img\VOC.png" alt="VOC"  />
 
 following is the class names and their corresponding colors in RGB order:
 
@@ -150,7 +150,7 @@ Another problem that occurs in VOC Dataset is that not every class appears in ev
 
 The solution is to only load the images that contains the classes we concern.
 
-![VOC overview](.\img\VOCoverview.png)
+<img src=".\img\VOCoverview.png" alt="VOC overview"  />
 
 Above is an overview of all trainable images with mask in a semantic segmentation task. The bar plot order for each class is train, val and test (VOC 2012 no test dataset). For binary segmentation, we need to choose one single class for training. The `human` class is therefore chosen, because it has much more images than others.
 
