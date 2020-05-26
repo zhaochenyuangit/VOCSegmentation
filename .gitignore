@@ -1,4 +1,6 @@
 /data
+/labelme
 0.3.0
 *.h5
 /.ipynb_checkpoints
+README.pdf

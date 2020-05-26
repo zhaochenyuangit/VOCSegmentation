@@ -40,6 +40,8 @@ File structure of the modified CamVid Dataset is shown as below:
 |---/testannot
 ```
 
+Here is the summary of CamVid Dataset.
+
 | item        |                                                              |
 | :---------- | ------------------------------------------------------------ |
 | image size  | $480\times360$ pixels                                        |
