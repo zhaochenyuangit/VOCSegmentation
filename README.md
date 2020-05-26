@@ -2,11 +2,11 @@
 
 This markdown file is a manual about how to modify the data-loader of [this great Github repo](https://github.com/qubvel/segmentation_models) to use segmentation model with custom datasets. And then deploy the model on jetson nano.
 
-#### workflow overview
+### Workflow Overview
 
 [TOC]
 
-#### the structure of 2 common public dataset
+### Introduction to 2 common public dataset
 
 ##### 1. CamVid Dataset
 
@@ -66,10 +66,10 @@ Following is the hierarchy of VOC 07 Dataset:
 |---/VOC2007
 	|---/Annotations # xml file for object detection
 	|---/ImageSets	# image ID lists of certain group as txt file
-		|---/Layout 	# for object detection
+		|---/Layout # for object detection
 		|---/Main	# id lists of a certain class
 		|---/Segmentation # id lists of all images having a mask
-        	|---/test.txt	# split into 3 subsets
+        	|---/test.txt # split into 3 subsets
             |---/train.txt
             |---/val.txt
     |---/JPEGImages	#original images
@@ -154,24 +154,103 @@ The solution is to only load the images that contains the classes we concern.
 
 Above is an overview of all trainable images with mask in a semantic segmentation task. The bar plot order for each class is train, val and test (VOC 2012 no test dataset). For binary segmentation, we need to choose one single class for training. The `human` class is therefore chosen, because it has much more images than others.
 
-#### write a custom dataset class
+### Annotation of custom images
+
+[labelme](https://github.com/wkentaro/labelme) is a great tool to create VOC-style annotations for semantic segmentation.
+
+##### installation
+
+Ubuntu 
+
+```shell
+sudo apt-get install labelme
+```
+
+Anaconda
+
+```shell
+# python3
+conda create --name=labelme python=3.6
+conda activate labelme
+pip install labelme
+```
+
+##### open up the GUI
+
+```shell
+# in shell
+labelme
+```
+
+<img src=".\img\labelmeGUI2.PNG" style="zoom:43%;" />
+
+A blank GUI will then pop out. Click "Open Dir" to choose the original image file-path. Then click the "Create Polygons" to circumscribe the objects.
+
+> When creating the polygons, we can zoom-in and zoom-out by holding Ctrl+Scroll wheel. 
+
+After creating the polygon we need to assign a class to the mask. Click save will create a .json file with the same filename as image in the same folder, the .json file play a role as "meta" annotation. Later we can generate PNG mask from the json file.
+
+###### Alternative
+
+```shell
+# in shell
+labelme image_foler --labels labels.txt
+```
+
+will open a GUI with a list of available classes defined in the txt file and open the image folder at the same time.
+
+##### export VOC-format dataset for semantic segmentation
+
+```shell
+# in shell
+python ./labelme2voc.py imagefolder destinationfoldervoc --labels labels.txt
+#generates
+#   orginal images	- destinationfoldervoc/JPEGImages						
+#   .npy files		- destinationfoldervoc/SegmentationClass
+#   PNG masks 		- destinationfoldervoc/SegmentationClassPNG
+#   human reading masks	- destinationfoldervoc/SegmentationClassVisualization
+```
+
+The .npy files and .png files correspond to the two mask styles mentioned above.
+
+* The label as .npy files (numpy array) contains only very low label values for class number (ex. `0, 4, 14`), and `255` indicates the `__ignore__` label value (`-1` in the npy file).
+* The label as .png files are painted with color, so easy for human to read. 
+
+##### Mask color
+
+When exporting the masks in voc-format, it is not possible to change the color map. In other words, the class number and the mask color is bounded. The mask color is always generated in the following order:
+
+<img src="C:\Users\zhaoc\Documents\MyUnet\img\colormap.png" alt="colormap" style="zoom:50%;" />
+
+In `label.txt` we should always have `__ignore__` as the first (-1) class, `_background_` as the second class (0). The colormap can be inspected by:
+
+```python
+import imgviz
+imgviz.imgviz.label_colormap(n_label=21, value=None)
+```
+
+But if we still want to modify custom colormap, we should look into `labelme/labelme/utils/_io.py`, in function `lblsave` (label save), we can change the colormap.
+
+### Write a custom dataset class
+
+A dataset is usually a subset of the original images, split into train-, validation- and test-set. The dataset class stores the file-path to all its images.  
+
+Usually, the image folder path and image ids are stored separately. For example, `./test/images` is the path to image folder, and `./test/masks` is the path to mask folder. While the id-list is a python list contains all image file names in that folder, for example `[001.png, 002.png, ...]`. By combination, we get `./test/images/001.png`. It is important to keep the image-ID for a certain image and its mask to be the same.
+
+> if the images are already split into train/val/test set like CamVid, we cam obtain the list of file-IDs by `file_list = os.listdir(images_dir)`, which returns all filenames in the folder as a list.
+>
+> if the images are not split, but there is a txt file including the split infomation like VOC, we can obtain the list by `file_list = tuple(open(txt_file_path, "r"))`
 
 The custom dataset should include the following methods:
 
 - `__len__` so that `len(dataset)` returns the size of the dataset.
 - `__getitem__` to support the indexing such that `dataset[i]` can be used to get i_th sample
 
-the dataset class stores the relative path to all its images. The images will not be loaded when the dataset class is created, but loaded when it is called with `__getitem__` method, e.g.  `image, mask = dataset[0]`.
-
-Usually, the image folder path and image ids are stored separately. For example, `./data/images` is the path to image folder, and `./data/masks` is the path to mask folder. While the id-list is a python list contains all image file names in that folder, for example `[001.png, 002.png, ...]`. By combination, we get `./data/images/001.png`. It is important to keep the image-ID for a certain image and its mask to be the same.
-
-> if the images are already split into train/val/test set like CamVid, we cam obtain the list of file-IDs by `os.listdir(images_dir)`
->
-> if the images are not split, but there is a txt file including the split infomation like VOC, we can obtain the list by `file_list = tuple(open(txt_file_path, "r"))`
+the dataset class doesn't store the images in memory, but only stores the relative path to all its images. The images will not be loaded when the dataset class is created, but is called with `__getitem__` method, e.g.  `image, mask = dataset[0]`.
 
 The returned `image` variable of the `__getitem__` method is the original jpg image with the size of `(H,W,3)`
 
-The returned `mask` variable is a series of one-hot code mask stacked on a new axis, with size of `(H,W,N)`, where `N` is the number of extracted classes. 
+The returned `mask` variable is a series of one-hot code mask of size `(H,W)` stacked on a new axis, with size of `(H,W,N)`, where `N` is the number of extracted classes. 
 
 ```python
 # pseudo code
@@ -185,12 +264,14 @@ def __getitem__:
     return img, mask
 ```
 
-To get the final mask of a certain class:
+To get the mask of a certain class:
 
 ```python
 # get the mask of the first desired class
 first_mask = mask[...,0] # select by the last axis
 ```
+
+##### Dataloader
 
 After writing the dataset class we can then pass it to the dataloader. The dataloader stacks several image-mask pair to create a batch.
 
@@ -208,16 +289,16 @@ batch[1].shape = (BATCH_SIZE,H,W,N) is the batch of masks
 '''
 ```
 
- the length of dataloader must be multiple times of BATCH_SIZE.
+ the length of dataloader must be multiple times of BATCH_SIZE. We discard the last image-mask pairs by `//` operation, if the length cannot be divided.
 
 ```python
 #pseudo code
 def __len__(self):
-    #discard the last image-mask pairs, if the length cannot be divided
+    
     return len(self.indexes) // self.batch_size
 ```
 
-#### train model on PC
+### Train model on PC
 
 ```
 import segmentation_models as sm
@@ -331,10 +412,14 @@ Beside the history returned by fit_generator(), a tensorboard callback function 
 
 * save model
 
-the weights-only file is already saved by the callback function during training. To save the entire model, we can either save it by :
+the weights-only file is already saved by the callback function during training. 
+
+To save the entire model, we can either save it at the end of training stage by :
 
 ```python
+# cover the last weights with the best weights
 model.load_weights('./best/weights.h5')
+# now save the model
 model.save('./path/entire/model.h5')
 ```
 
@@ -356,10 +441,12 @@ with open('model.json', 'r') as json_file:
     loaded_model_json = json_file.read()
     
 loaded_model = model_from_json(loaded_model_json)
+# load best weights and save entire model
 loaded_model.load_weights('./best/weights.h5')
+model.save('./path/entire/model.h5')
 ```
 
-#### deploy model on jetson
+### Deploy model on jetson
 
 ##### load the model from weights-only file
 
@@ -416,11 +503,3 @@ model = tf.keras.models.load_model(path,compile=False,custom_objects{
 'swish':tf.compat.v2.nn.swish,
 'FixedDropout':FixedDropout})
 ```
-
-
-
-construct VOC dataset
-
-VOC介绍: https://arleyzhang.github.io/articles/1dc20586/ 
-
-三种常用数据集：https://zhuanlan.zhihu.com/p/48670341
