@@ -17,13 +17,17 @@ parser.add_argument('root_dir',type=str,
                     help='the root dir of VOC dataset, should be VOC2007 or VOC2012')
 parser.add_argument('--backbone',type=str,default='efficientnetb3', 
                     help='backbone name of the model')
-parser.add_argument('--output',type=str,default='output.jpg',
+parser.add_argument('--output',type=str,default='./results/output.jpg',
                     help='output file name of performance test')
 args = parser.parse_known_args()[0]
 
 import os
 from os.path import join as pjoin
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+if os.path.exists('results'):
+    pass
+else: 
+    os.mkdir('results')
 
 import cv2
 import keras
