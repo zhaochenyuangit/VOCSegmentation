@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 '''
-This ipynotebook is modified from [qubvel\`s repo](https://github.com/qubvel/segmentation_models/tree/master/examples) 
-to adjust to VOC07 dataset. As an exercise for the further implement of a custom dataset
+test performance of a model from [qubvel\`s repo](https://github.com/qubvel/segmentation_models/tree/master/examples) 
+the model must be a full keras model, saved by model.save() function
+the test dataset is VOC2007 test dataset, to download please go to http://host.robots.ox.ac.uk/pascal/VOC/voc2007/
+scroll down to the 'Test Data' Section and download the annotated test data (430MB tar file)
+the root dir passed to the program should be .../VOCdevkit/VOC2007
+
 Reqirements
 - keras >= 2.2.0 or tensorflow >= 1.13
 - segmenation-models==1.0.*
@@ -224,15 +228,7 @@ import segmentation_models as sm
 # not changeable once the model is trained because .h5 only contains weights
 # assuming the model structure is already known
 BACKBONE = args.backbone
-BATCH_SIZE = 4
-CLASSES = ['person']
-LR = 0.0001
-
 preprocess_input = sm.get_preprocessing(BACKBONE)
-
-# define network parameters
-n_classes = 1 if len(CLASSES) == 1 else (len(CLASSES) + 1)  # case for binary and multiclass segmentation
-activation = 'sigmoid' if n_classes == 1 else 'softmax'
 
 #create model
 model = keras.models.load_model(args.modelfile)
