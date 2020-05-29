@@ -1,0 +1,16 @@
+Login Windows:
+Benutzername: zhaoc
+Passwort: 7358zHku
+
+
+Login Nvidia Jetson Nano
+Benutzername: Stefan Mittermeier
+Passwort: mviot12!!
+
+Mailadresse
+chenyuan.zhao@proplant-mvi.com
+
+Erster Schritte:
+1. Im Mail Programm den Erhalt der Geräte bestätigen
+
+2. In Microsoft Teams findest du einen Ordner für das Projekt Quox mit Informationen
