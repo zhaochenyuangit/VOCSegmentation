@@ -2,6 +2,8 @@
 
 This markdown file is a manual about how to modify the data-loader of [this great Github repo](https://github.com/qubvel/segmentation_models) to use segmentation model with custom datasets. And then deploy the model on jetson nano.
 
+<img src=".\img\notsquare2-1590757864650.png" alt="preview" style="zoom:72%;" />
+
 ### Workflow Overview
 
 [TOC]
@@ -505,3 +507,51 @@ model = tf.keras.models.load_model(path,compile=False,custom_objects{
 'swish':tf.compat.v2.nn.swish,
 'FixedDropout':FixedDropout})
 ```
+
+##### image preprocessing
+
+Pre-processing is indispensable if want to obtain a decent predict result. 
+
+Firstly, we need to resize the image size to multiple times of 32. Because in Unet architecture, there are 5 2X Pooling layers, the original image will be resized to 1/32. We could use `Albumentation.PadIfNeeded` function to pad the image.
+
+```python
+# pseudo code
+import Albumentation as A
+from math import ceil
+H,W,C = image.shape
+H = 32*ceil(H/32)
+W = 32*ceil(W/32)
+aug = A.Compose([A.PadIfNeeded(H,W)])
+sample = aug(image=image)
+image = sample['image']
+```
+
+After padding the image, we need to process the image with the preprocessing function offered by segmentation_models package.
+
+```python
+# pseudo code
+import segmentation_models as sm
+BACKBONE = 'efficientnetb3'
+preprocess_input = sm.get_preprocessing(BACKBONE)
+pre = A.Compose([
+        A.Lambda(image=preprocess_input)
+        ])
+sample = pre(image=image)
+image = sample['image']
+```
+
+##### predict
+
+Prediction is done by one line `model.predict`. Similar as the training stage, the size of input image is `(BATCHSIZE,H,W,C)`, the size of output masks is `(BATCHSIZE,H,W,N)`, where `BATCHSIZE` should always be 1 in prediction case, and `N` is the number of classes to predict, in binary segmentation case should be 1. 
+
+```python
+# add the BATCHSIZE axis to the (H,W,3) image
+# so that the input image becomes (1,H,W,3) in size
+image = np.expand_dims(image, axis=0)
+pr_mask = model.predict(image).round()
+pr_mask = pr_mask[...,0] # select the first class on the mask axis
+pr_mask = pr_mask.squeeze() # squeeze out the batch axis to get (H,W) scala mask
+```
+
+
+

@@ -35,6 +35,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import albumentations as A
 import segmentation_models as sm
+from math import ceil
 
 # rgba format, add alpha channel to transparent the background
 MASKCOLOR=[128,0,0,0.5]
@@ -55,8 +56,14 @@ preprocess_input = sm.get_preprocessing(args.backbone)
 image = cv2.imread(args.input_image)
 # pre-processing, simplified from the original ipynb file
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+# rather than resize the image to 320x320,
+# we want aritary size of input image
+H,W,C = image.shape
+H = 32*ceil(H/32)
+W = 32*ceil(W/32)
 aug = A.Compose([
-           A.Resize(320,320) 
+           #A.Resize(320,320) 
+        A.PadIfNeeded(H,W)
             ])
 sample = aug(image=image)
 image = sample['image']
@@ -80,4 +87,4 @@ pr_mask = pr_mask[...,np.newaxis] # add a newaxis for convert to rgba format
 pr_mask=np.dot(pr_mask,np.array(MASKCOLOR)[np.newaxis,...])
 plt.imshow(pr_mask,interpolation=None)
 plt.savefig(args.output)
-print('save file successfully')
+print('save file successfully as {}'.format(args.output))
