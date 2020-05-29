@@ -14,7 +14,7 @@ This markdown file is a manual about how to modify the data-loader of [this grea
 
 CamVid is a car camera live-stream Dataset for semantic segmentation from Cambridge. The [original CamVid Dataset](http://mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/) has 32 classes, and the mask is painted with color. 
 
-In the example ipy-notebook, however, the author used [a modified version](https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid) of the Dataset. In the modified version, class numbers are reduced to 12, and the data mask is no longer painted with color, but each pixel in the mask directly has the value of its class number from 0 to 11. Therefore the mask looks almost black, no longer human-readable but easy for program to extract masks in one-hot code form of a certain class.  
+In the [example ipy-notebook](https://github.com/qubvel/segmentation_models/blob/master/examples/binary%20segmentation%20(camvid).ipynb), however, the author used [a modified version](https://github.com/alexgkendall/SegNet-Tutorial/tree/master/CamVid) of the Dataset. In the modified version, class numbers are reduced to 12, and the data mask is no longer painted with color, but each pixel in the mask directly has the value of its class number from 0 to 11. Therefore the mask looks almost black, no longer human-readable but easy for program to extract masks in one-hot code form of a certain class.  
 
 <img src=".\img\CamVid.png" alt="camvid"  />
 
@@ -427,7 +427,7 @@ model.load_weights('./best/weights.h5')
 model.save('./path/entire/model.h5')
 ```
 
-Or save it architecture only as json file:
+Or save its architecture only as json file:
 
 ```python
 import json
@@ -494,7 +494,7 @@ Or define these layers by oneself:
 
 ```python
 import tensorflow as tf
-from keras import backed as K
+from keras import backend as K
 class FixedDropout(tf.keras.layers.Dropout):
     def _get_noise_shape(self, inputs):
         if self.noise_shape is None:
